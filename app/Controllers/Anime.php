@@ -98,6 +98,13 @@ class Anime extends BaseController
 
     public function delete($id)
     {
+        // cari Gambar Berdasarkan Id
+        $anime = $this->animeModel->find($id);
+        // cek jika file gambanrnya default
+        if ($anime['sampul'] != 'default.png') {
+            // hapus Gambar
+            unlink('img/' . $anime['sampul']);
+        }
         $this->animeModel->delete($id);
         session()->setFlashData('pesan', 'Data Berhasil DiHapus');
         return redirect()->to('/Anime');
@@ -130,11 +137,33 @@ class Anime extends BaseController
                     'required' => 'Judul Anime Harus Diisi',
                     'is_unique' => 'Judul Anime Sudah Ada !!'
                 ]
+            ],
+            'sampul' => [
+                'rules' => 'max_size[sampul,2048]|is_image[sampul]|mime_in[sampul,image/jpg,image/png,image/jpeg]',
+                'errors' => [
+                    'max_size' => 'Ukuran Gambar terlalu Besar',
+                    'is_image' => 'Yang Anda Pilih Bukan Gambar',
+                    'mime_in' => 'Yang Anda Pilih Bukan Gambar',
+
+                ]
             ]
         ])) {
-            $validation = \Config\Services::validation();
-            return redirect()->to('/Anime/edit/' . $this->request->getVar('slug'))->withInput()->with('validation', $validation);
+            return redirect()->to('/Anime/edit/' . $this->request->getVar('slug'))->withInput();
         }
+        // kelola file gambar
+        $fileSampul = $this->request->getFile('sampul');
+
+        // cek gambar, apakah tetap gambar lama
+        if ($fileSampul->getError() == 4) {
+            $namaSampul = $this->request->getVar('sampulLama');
+        } else {
+            $namaSampul = $fileSampul->getRandomName();
+            $fileSampul->move('img', $namaSampul);
+
+            // hapus file lama
+            unlink('img/' . $this->request->getVar('sampulLama'));
+        }
+
         $slug = url_title($this->request->getVar('judul_anime'), '-', true);
         $this->animeModel->save([
             'id' => $id,
@@ -143,7 +172,7 @@ class Anime extends BaseController
             'penulis' => $this->request->getVar('penulis'),
             'penerbit' => $this->request->getVar('penerbit'),
             'tahun' => $this->request->getVar('tahun'),
-            'sampul' => $this->request->getVar('sampul'),
+            'sampul' => $namaSampul
         ]);
 
         session()->setFlashData('pesan', 'Data Berhasil Di Ubah');

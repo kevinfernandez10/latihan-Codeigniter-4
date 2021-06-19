@@ -15,6 +15,9 @@
                 <li class="nav-item">
                     <a class="nav-link" href="/anime">Anime</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/orang">Orang</a>
+                </li>
             </ul>
         </div>
     </div>
